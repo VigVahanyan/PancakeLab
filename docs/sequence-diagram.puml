@@ -1,0 +1,45 @@
+@startuml
+title Order flow
+actor Disciple
+actor Chef
+actor Delivery
+participant DiscipleApi as D
+participant ChefApi as C
+participant DeliveryApi as V
+participant OrderService as OS
+participant PancakeService as PS
+participant "Order\n(data holder)" as O
+
+Disciple -> D : createOrder(building, room)
+D -> OS : createOrder(building, room)
+OS --> Disciple : orderId
+Disciple -> D : listIngredients()
+D -> PS : listIngredients()
+PS --> Disciple : [Ingredient(id, description)]
+loop for each pancake
+  Disciple -> D : addPancake(orderId)
+  D -> PS : addPancake(orderId)
+  PS --> Disciple : pancakeId
+  loop for each ingredient
+    Disciple -> D : addIngredientToPancake(orderId, pancakeId, ingredientId)
+    D -> PS : addIngredientToPancake(...)
+    PS -> PS : look up ingredientId in IngredientCatalog
+    PS -> O : add ingredient to pancake
+  end
+end
+Disciple -> D : completeOrder(orderId)
+D -> OS : completeOrder(orderId)
+OS -> OS : check rules, OrderWorkflow\nOS -> O : setStatus(COMPLETED)
+Chef -> C : listCompletedOrders()
+C -> OS : listCompletedOrders()
+Chef -> C : prepareOrder(orderId)
+C -> OS : prepareOrder(orderId)
+OS -> O : setStatus(PREPARED) via OrderWorkflow
+Delivery -> V : listPreparedOrders()
+V -> OS : listPreparedOrders()
+Delivery -> V : deliverOrder(orderId)
+V -> OS : deliverOrder(orderId)
+OS -> O : setStatus(DELIVERED) via OrderWorkflow
+OS --> Delivery : DeliveredOrder(building, room, pancakes)
+note right of OS : order removed from repository
+@enduml

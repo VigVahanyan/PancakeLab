@@ -1,0 +1,11 @@
+@startuml
+title Order lifecycle (mirrors the table in OrderWorkflow)
+[*] --> CREATED : createOrder
+CREATED --> CREATED : addPancake / addIngredientToPancake / removePancakes
+CREATED --> COMPLETED : completeOrder (Disciple)\n(not empty, every pancake has ingredients)
+CREATED --> CANCELLED : cancelOrder (Disciple, removed)
+COMPLETED --> PREPARED : prepareOrder (Chef)
+PREPARED --> DELIVERED : deliverOrder (Delivery, removed)
+CANCELLED --> [*]
+DELIVERED --> [*]
+@enduml

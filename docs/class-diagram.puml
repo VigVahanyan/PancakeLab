@@ -1,0 +1,177 @@
+@startuml
+title Pancake Lab - class diagram
+skinparam classAttributeIconSize 0
+
+package "pancake-api module" {
+package "org.pancakelab.api (public API, one interface per role)" {
+  interface DiscipleApi {
+    +createOrder(building, room): UUID
+    +addPancake(orderId): UUID
+    +listIngredients(): List<Ingredient>
+    +addIngredientToPancake(orderId, pancakeId, ingredientId)
+    +removePancakes(description, orderId, count)
+    +viewOrder(orderId): List<String>
+    +completeOrder(orderId)
+    +cancelOrder(orderId)
+  }
+  interface ChefApi {
+    +listCompletedOrders(): Set<UUID>
+    +prepareOrder(orderId)
+  }
+  interface DeliveryApi {
+    +listPreparedOrders(): Set<UUID>
+    +deliverOrder(orderId): DeliveredOrder
+  }
+}
+
+package "org.pancakelab.api.model" {
+  class Ingredient <<record>> {
+    id: int
+    description: String
+  }
+  class DeliveredOrder <<record>> {
+    orderId: UUID
+    building: int
+    room: int
+    pancakes: List<String>
+  }
+}
+
+}
+
+package "pancake-core module" {
+package "org.pancakelab.service.role (internal)" {
+  class DiscipleApiImpl
+  class ChefApiImpl
+  class DeliveryApiImpl
+}
+
+package "org.pancakelab.service.order (internal)" {
+  interface OrderService {
+    createOrder / viewOrder / completeOrder
+    prepareOrder / cancelOrder / deliverOrder
+    listCompletedOrders / listPreparedOrders
+  }
+  class OrderServiceImpl
+}
+
+package "org.pancakelab.service.pancake (internal)" {
+  interface PancakeService {
+    addPancake / addIngredientToPancake / removePancakes
+  }
+  class PancakeServiceImpl
+}
+
+package "org.pancakelab.service.shared (internal)" {
+  class OrderLookup {
+    find(orderId): Order
+    guarded(action)
+  }
+  class OrderRules {
+    transition(order, operation)
+    describe(pancake): String
+  }
+  class OrderLog
+}
+
+package "org.pancakelab.repository" {
+  interface OrderRepository {
+    save(order)
+    findById(id): Optional<Order>
+    remove(id)
+    findIdsByStatus(status): Set<UUID>
+  }
+  class InMemoryOrderRepository
+}
+
+package "org.pancakelab.common" {
+  enum OrderStatus {
+    CREATED
+    COMPLETED
+    PREPARED
+    DELIVERED
+    CANCELLED
+  }
+  enum OrderOperation {
+    ADD_PANCAKE
+    ADD_INGREDIENT
+    REMOVE_PANCAKES
+    COMPLETE
+    CANCEL
+    PREPARE
+    DELIVER
+  }
+  class OrderWorkflow <<table: status x operation -> status>> {
+    +next(status, operation): OrderStatus
+    +allows(status, operation): boolean
+    +allowedOperations(status): Set<OrderOperation>
+  }
+  class OrderNotFoundException
+  class InvalidOrderStateException
+}
+
+package "org.pancakelab.model (internal)" {
+  class Order <<plain data holder>> {
+    -id: UUID
+    -building: int
+    -room: int
+    -status: OrderStatus
+    +getPancakes(): List<Pancake>
+    +getStatus() / setStatus(status)
+  }
+  class BuildingRegistry {
+    +validate(building, room)
+  }
+}
+
+package "org.pancakelab.model.pancakes (internal)" {
+  class Pancake <<plain data holder>> {
+    -id: UUID
+    -ingredients: List<Ingredient>
+    +getIngredients(): List<Ingredient>
+  }
+  class IngredientCatalog <<ingredients table>> {
+    +all(): List<Ingredient>
+    +require(id): Ingredient
+  }
+}
+
+}
+
+DiscipleApi <|.. DiscipleApiImpl
+ChefApi <|.. ChefApiImpl
+DeliveryApi <|.. DeliveryApiImpl
+DeliveryApi ..> DeliveredOrder : returns
+DiscipleApi ..> Ingredient : lists
+IngredientCatalog o-- "*" Ingredient
+Pancake o-- "*" Ingredient
+
+DiscipleApiImpl --> OrderService
+DiscipleApiImpl --> PancakeService
+ChefApiImpl --> OrderService
+DeliveryApiImpl --> OrderService
+
+OrderService <|.. OrderServiceImpl
+PancakeService <|.. PancakeServiceImpl
+OrderServiceImpl --> OrderRepository
+OrderServiceImpl --> BuildingRegistry
+OrderServiceImpl --> OrderLog
+OrderServiceImpl --> OrderLookup
+OrderServiceImpl --> OrderRules
+OrderServiceImpl ..> OrderWorkflow : complete
+PancakeServiceImpl --> IngredientCatalog
+PancakeServiceImpl --> OrderLog
+PancakeServiceImpl --> OrderLookup
+PancakeServiceImpl --> OrderRules
+OrderLookup --> OrderRepository
+OrderLookup ..> OrderNotFoundException : throws
+OrderLookup ..> InvalidOrderStateException : throws
+
+OrderRepository <|.. InMemoryOrderRepository
+InMemoryOrderRepository o-- "*" Order
+Order *-- "*" Pancake
+Order --> OrderStatus
+OrderRules ..> OrderWorkflow : every transition
+OrderWorkflow ..> OrderStatus
+OrderWorkflow ..> OrderOperation
+@enduml
