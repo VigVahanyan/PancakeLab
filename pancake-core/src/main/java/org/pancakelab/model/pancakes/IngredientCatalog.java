@@ -5,12 +5,7 @@ import org.pancakelab.api.model.Ingredient;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 /**
  * The ingredients table: each ingredient has a unique positive id and a non-blank description, and
@@ -42,7 +37,9 @@ public final class IngredientCatalog {
         }
     }
 
-    /** Loads {@code ingredients.properties}: one {@code <id>=<description>} entry per ingredient. */
+    /**
+     * Loads {@code ingredients.properties}: one {@code <id>=<description>} entry per ingredient.
+     */
     public static IngredientCatalog defaultCatalog() {
         try (InputStream in = IngredientCatalog.class.getResourceAsStream(DEFAULT_RESOURCE)) {
             if (in == null) {
@@ -58,7 +55,9 @@ public final class IngredientCatalog {
         }
     }
 
-    /** @return all ingredients, ordered by id */
+    /**
+     * @return all ingredients, ordered by id
+     */
     public List<Ingredient> all() {
         return byId.values().stream().sorted(Comparator.comparingInt(Ingredient::id)).toList();
     }

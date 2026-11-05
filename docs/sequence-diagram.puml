@@ -8,7 +8,7 @@ participant ChefApi as C
 participant DeliveryApi as V
 participant OrderService as OS
 participant PancakeService as PS
-participant "Order\n(data holder)" as O
+participant "Order\n(domain model)" as O
 
 Disciple -> D : createOrder(building, room)
 D -> OS : createOrder(building, room)
@@ -24,22 +24,22 @@ loop for each pancake
     Disciple -> D : addIngredientToPancake(orderId, pancakeId, ingredientId)
     D -> PS : addIngredientToPancake(...)
     PS -> PS : look up ingredientId in IngredientCatalog
-    PS -> O : add ingredient to pancake
+    PS -> O : addIngredient(pancakeId, ingredient)\n(checks OrderWorkflow)
   end
 end
 Disciple -> D : completeOrder(orderId)
 D -> OS : completeOrder(orderId)
-OS -> OS : check rules, OrderWorkflow\nOS -> O : setStatus(COMPLETED)
+OS -> O : complete()\n(checks OrderWorkflow and preconditions)
 Chef -> C : listCompletedOrders()
 C -> OS : listCompletedOrders()
 Chef -> C : prepareOrder(orderId)
 C -> OS : prepareOrder(orderId)
-OS -> O : setStatus(PREPARED) via OrderWorkflow
+OS -> O : prepare() (checks OrderWorkflow)
 Delivery -> V : listPreparedOrders()
 V -> OS : listPreparedOrders()
 Delivery -> V : deliverOrder(orderId)
 V -> OS : deliverOrder(orderId)
-OS -> O : setStatus(DELIVERED) via OrderWorkflow
+OS -> O : deliver() (checks OrderWorkflow)
 OS --> Delivery : DeliveredOrder(building, room, pancakes)
 note right of OS : order removed from repository
 @enduml

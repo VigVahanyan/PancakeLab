@@ -1,30 +1,26 @@
 package org.pancakelab.service;
 
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.pancakelab.common.InvalidOrderStateException;
+import org.pancakelab.common.OrderNotFoundException;
+import org.pancakelab.model.BuildingRegistry;
+import org.pancakelab.model.pancakes.IngredientCatalog;
+import org.pancakelab.repository.InMemoryOrderRepository;
+import org.pancakelab.repository.OrderRepository;
 import org.pancakelab.service.order.OrderService;
 import org.pancakelab.service.order.OrderServiceImpl;
 import org.pancakelab.service.pancake.PancakeService;
 import org.pancakelab.service.pancake.PancakeServiceImpl;
 import org.pancakelab.service.shared.OrderLog;
-import org.pancakelab.api.ChefApi;
-import org.pancakelab.api.DeliveryApi;
-import org.pancakelab.api.DiscipleApi;
-import org.pancakelab.common.InvalidOrderStateException;
-import org.pancakelab.common.OrderNotFoundException;
-import org.pancakelab.repository.InMemoryOrderRepository;
-import org.pancakelab.repository.OrderRepository;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.pancakelab.model.BuildingRegistry;
-import org.pancakelab.model.pancakes.IngredientCatalog;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.pancakelab.service.TestIngredients.*;
+import static org.pancakelab.service.TestIngredients.DARK_CHOCOLATE;
+import static org.pancakelab.service.TestIngredients.HAZELNUTS;
 
 public class OrderLifecycleTest {
     private OrderService orderService;
@@ -115,7 +111,7 @@ public class OrderLifecycleTest {
 
         service.cancelOrder(id);
 
-        assertEquals(1, messages.stream().filter(m -> m.startsWith("Cancelled order " + id)).count());
+        assertEquals(1, messages.stream().filter(m -> m.startsWith("CANCEL: order " + id + " is now CANCELLED")).count());
     }
 
     private UUID addPancake() {

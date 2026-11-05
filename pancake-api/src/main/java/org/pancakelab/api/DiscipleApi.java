@@ -12,13 +12,19 @@ import java.util.UUID;
 public interface DiscipleApi {
     UUID createOrder(int building, int room);
 
-    /** Starts a new, empty pancake; add its ingredients one by one with {@link #addIngredientToPancake}. */
+    /**
+     * Starts a new, empty pancake; add its ingredients one by one with {@link #addIngredientToPancake}.
+     */
     UUID addPancake(UUID orderId);
 
-    /** The ingredients table: every ingredient with its id and description. */
+    /**
+     * The ingredients table: every ingredient with its id and description.
+     */
     List<Ingredient> listIngredients();
 
-    /** Adds the ingredient with the given id (see {@link #listIngredients}) to the pancake. */
+    /**
+     * Adds the ingredient with the given id (see {@link #listIngredients}) to the pancake.
+     */
     void addIngredientToPancake(UUID orderId, UUID pancakeId, int ingredientId);
 
     void removePancakes(String description, UUID orderId, int count);

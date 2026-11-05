@@ -2,8 +2,8 @@ package org.pancakelab.service.shared;
 
 import org.pancakelab.common.InvalidOrderStateException;
 import org.pancakelab.common.OrderNotFoundException;
-import org.pancakelab.repository.OrderRepository;
 import org.pancakelab.model.Order;
+import org.pancakelab.repository.OrderRepository;
 
 import java.util.UUID;
 import java.util.function.Supplier;
@@ -39,6 +39,9 @@ public final class OrderLookup {
     }
 
     public static void guarded(Runnable action) {
-        guarded(() -> { action.run(); return null; });
+        guarded(() -> {
+            action.run();
+            return null;
+        });
     }
 }

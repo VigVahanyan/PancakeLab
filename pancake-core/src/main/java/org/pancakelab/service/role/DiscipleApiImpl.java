@@ -1,20 +1,22 @@
 package org.pancakelab.service.role;
 
-import org.pancakelab.service.order.OrderService;
-import org.pancakelab.service.pancake.PancakeService;
 import org.pancakelab.api.DiscipleApi;
 import org.pancakelab.api.model.Ingredient;
+import org.pancakelab.service.order.OrderService;
+import org.pancakelab.service.pancake.PancakeService;
 
 import java.util.List;
 import java.util.UUID;
 
-/** Disciple use-cases, delegating to the order and pancake services. */
+/**
+ * Disciple use-cases, delegating to the order and pancake services.
+ */
 public class DiscipleApiImpl implements DiscipleApi {
-    private final OrderService   orders;
+    private final OrderService orders;
     private final PancakeService pancakes;
 
     public DiscipleApiImpl(OrderService orders, PancakeService pancakes) {
-        this.orders   = orders;
+        this.orders = orders;
         this.pancakes = pancakes;
     }
 

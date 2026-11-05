@@ -28,7 +28,7 @@ public final class BuildingRegistry {
             properties.load(in);
             return new BuildingRegistry(properties.stringPropertyNames().stream()
                     .collect(Collectors.toMap(key -> Integer.parseInt(key.trim()),
-                                              key -> Integer.parseInt(properties.getProperty(key).trim()))));
+                            key -> Integer.parseInt(properties.getProperty(key).trim()))));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

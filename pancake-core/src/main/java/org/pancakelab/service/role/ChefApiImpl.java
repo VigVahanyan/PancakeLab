@@ -1,12 +1,14 @@
 package org.pancakelab.service.role;
 
-import org.pancakelab.service.order.OrderService;
 import org.pancakelab.api.ChefApi;
+import org.pancakelab.service.order.OrderService;
 
 import java.util.Set;
 import java.util.UUID;
 
-/** Chef use-cases, delegating to the order service. */
+/**
+ * Chef use-cases, delegating to the order service.
+ */
 public class ChefApiImpl implements ChefApi {
     private final OrderService orders;
 

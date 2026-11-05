@@ -1,16 +1,14 @@
 package org.pancakelab.service.order;
 
+import org.pancakelab.api.model.DeliveredOrder;
+import org.pancakelab.common.OrderOperation;
+import org.pancakelab.common.OrderStatus;
+import org.pancakelab.model.BuildingRegistry;
+import org.pancakelab.model.Order;
+import org.pancakelab.repository.OrderRepository;
 import org.pancakelab.service.pancake.PancakeService;
 import org.pancakelab.service.shared.OrderLog;
 import org.pancakelab.service.shared.OrderLookup;
-import org.pancakelab.service.shared.OrderRules;
-import org.pancakelab.api.model.DeliveredOrder;
-import org.pancakelab.common.OrderOperation;
-import org.pancakelab.common.OrderWorkflow;
-import org.pancakelab.common.OrderStatus;
-import org.pancakelab.repository.OrderRepository;
-import org.pancakelab.model.BuildingRegistry;
-import org.pancakelab.model.Order;
 
 import java.util.List;
 import java.util.Set;
@@ -41,54 +39,45 @@ public class OrderServiceImpl implements OrderService {
         buildings.validate(building, room);
         Order order = new Order(building, room);
         orders.save(order);
+        log.log("CREATE", order);
         return order.getId();
     }
 
     @Override
     public List<String> viewOrder(UUID orderId) {
-        return OrderRules.descriptions(lookup.find(orderId));
+        return lookup.find(orderId).descriptions();
     }
 
     @Override
     public void completeOrder(UUID orderId) {
         Order order = lookup.find(orderId);
-        guarded(() -> {
-            OrderStatus next = OrderWorkflow.next(order.getStatus(), OrderOperation.COMPLETE);
-            if (order.getPancakes().isEmpty()) {
-                throw new IllegalStateException("Cannot complete an empty order " + order.getId());
-            }
-            if (order.getPancakes().stream().anyMatch(p -> p.getIngredients().isEmpty())) {
-                throw new IllegalStateException(
-                        "Cannot complete order %s: a pancake has no ingredients".formatted(order.getId()));
-            }
-            order.setStatus(next);
-        });
-        log.logCompleteOrder(order);
+        guarded(order::complete);
+        log.log(OrderOperation.COMPLETE, order);
     }
 
     @Override
     public void prepareOrder(UUID orderId) {
         Order order = lookup.find(orderId);
-        guarded(() -> OrderRules.transition(order, OrderOperation.PREPARE));
-        log.logPrepareOrder(order);
+        guarded(order::prepare);
+        log.log(OrderOperation.PREPARE, order);
     }
 
     @Override
     public void cancelOrder(UUID orderId) {
         Order order = lookup.find(orderId);
-        guarded(() -> OrderRules.transition(order, OrderOperation.CANCEL));
+        guarded(order::cancel);
         orders.remove(orderId);
-        log.logCancelOrder(order);
+        log.log(OrderOperation.CANCEL, order);
     }
 
     @Override
     public DeliveredOrder deliverOrder(UUID orderId) {
         Order order = lookup.find(orderId);
-        guarded(() -> OrderRules.transition(order, OrderOperation.DELIVER));
+        guarded(order::deliver);
         DeliveredOrder delivered = new DeliveredOrder(order.getId(), order.getBuilding(),
-                order.getRoom(), OrderRules.descriptions(order));
+                order.getRoom(), order.descriptions());
         orders.remove(orderId);
-        log.logDeliverOrder(order);
+        log.log(OrderOperation.DELIVER, order);
         return delivered;
     }
 

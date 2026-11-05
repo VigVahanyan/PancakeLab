@@ -31,8 +31,8 @@ public class InMemoryOrderRepository implements OrderRepository {
     @Override
     public Set<UUID> findIdsByStatus(OrderStatus status) {
         return orders.values().stream()
-                     .filter(order -> order.getStatus() == status)
-                     .map(Order::getId)
-                     .collect(Collectors.toUnmodifiableSet());
+                .filter(order -> order.getStatus() == status)
+                .map(Order::getId)
+                .collect(Collectors.toUnmodifiableSet());
     }
 }

@@ -67,10 +67,6 @@ package "org.pancakelab.service.shared (internal)" {
     find(orderId): Order
     guarded(action)
   }
-  class OrderRules {
-    transition(order, operation)
-    describe(pancake): String
-  }
   class OrderLog
 }
 
@@ -111,13 +107,28 @@ package "org.pancakelab.common" {
 }
 
 package "org.pancakelab.model (internal)" {
-  class Order <<plain data holder>> {
+  class Order <<rich domain model>> {
     -id: UUID
     -building: int
     -room: int
     -status: OrderStatus
-    +getPancakes(): List<Pancake>
-    +getStatus() / setStatus(status)
+    +getStatus(): OrderStatus
+    +getPancakes(): List<Pancake> <<read-only>>
+    +descriptions(): List<String>
+    +addPancake(): UUID
+    +addIngredient(pancakeId, ingredient)
+    +removePancakes(description, count)
+    +complete()
+    +prepare()
+    +cancel()
+    +deliver()
+  }
+  class Pancake {
+    -id: UUID
+    -ingredients: List<Ingredient>
+    +getIngredients(): List<Ingredient> <<read-only>>
+    +description(): String
+    ~addIngredient(ingredient)
   }
   class BuildingRegistry {
     +validate(building, room)
@@ -125,11 +136,6 @@ package "org.pancakelab.model (internal)" {
 }
 
 package "org.pancakelab.model.pancakes (internal)" {
-  class Pancake <<plain data holder>> {
-    -id: UUID
-    -ingredients: List<Ingredient>
-    +getIngredients(): List<Ingredient>
-  }
   class IngredientCatalog <<ingredients table>> {
     +all(): List<Ingredient>
     +require(id): Ingredient
@@ -157,12 +163,9 @@ OrderServiceImpl --> OrderRepository
 OrderServiceImpl --> BuildingRegistry
 OrderServiceImpl --> OrderLog
 OrderServiceImpl --> OrderLookup
-OrderServiceImpl --> OrderRules
-OrderServiceImpl ..> OrderWorkflow : complete
 PancakeServiceImpl --> IngredientCatalog
 PancakeServiceImpl --> OrderLog
 PancakeServiceImpl --> OrderLookup
-PancakeServiceImpl --> OrderRules
 OrderLookup --> OrderRepository
 OrderLookup ..> OrderNotFoundException : throws
 OrderLookup ..> InvalidOrderStateException : throws
@@ -171,7 +174,7 @@ OrderRepository <|.. InMemoryOrderRepository
 InMemoryOrderRepository o-- "*" Order
 Order *-- "*" Pancake
 Order --> OrderStatus
-OrderRules ..> OrderWorkflow : every transition
+Order ..> OrderWorkflow : every change
 OrderWorkflow ..> OrderStatus
 OrderWorkflow ..> OrderOperation
 @enduml
