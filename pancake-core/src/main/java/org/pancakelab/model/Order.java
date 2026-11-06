@@ -6,7 +6,6 @@ import org.pancakelab.common.OrderStatus;
 import org.pancakelab.common.OrderWorkflow;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -19,6 +18,11 @@ import java.util.UUID;
  * <p>
  * Things that need collaborators (building registry, ingredient catalog, storage, logging) are not
  * its concern; the services handle those.
+ * <p>
+ * Thread safety: each order is its own lock. Every method that reads or changes its state is
+ * {@code synchronized}, so a check-then-change (e.g. "is it still open?" then "complete it") is
+ * atomic per order, while different orders never block each other. Getters hand out snapshots, so a
+ * caller never iterates a list another thread is changing.
  */
 public class Order {
     private final UUID id = UUID.randomUUID();
@@ -44,18 +48,18 @@ public class Order {
         return room;
     }
 
-    public OrderStatus getStatus() {
+    public synchronized OrderStatus getStatus() {
         return status;
     }
 
     /**
-     * Read-only view of the pancakes in insertion order.
+     * Read-only snapshot of the pancakes in insertion order.
      */
-    public List<Pancake> getPancakes() {
-        return Collections.unmodifiableList(pancakes);
+    public synchronized List<Pancake> getPancakes() {
+        return List.copyOf(pancakes);
     }
 
-    public List<String> descriptions() {
+    public synchronized List<String> descriptions() {
         return pancakes.stream().map(Pancake::description).toList();
     }
 
@@ -64,7 +68,7 @@ public class Order {
      *
      * @return the id of the new pancake
      */
-    public UUID addPancake() {
+    public synchronized UUID addPancake() {
         OrderStatus next = OrderWorkflow.next(status, OrderOperation.ADD_PANCAKE);
         Pancake pancake = new Pancake();
         pancakes.add(pancake);
@@ -72,7 +76,7 @@ public class Order {
         return pancake.getId();
     }
 
-    public void addIngredient(UUID pancakeId, Ingredient ingredient) {
+    public synchronized void addIngredient(UUID pancakeId, Ingredient ingredient) {
         OrderStatus next = OrderWorkflow.next(status, OrderOperation.ADD_INGREDIENT);
         pancakes.stream().filter(p -> p.getId().equals(pancakeId)).findFirst()
                 .orElseThrow(() -> new IllegalArgumentException(
@@ -84,7 +88,7 @@ public class Order {
     /**
      * Removes the first {@code count} pancakes whose description matches.
      */
-    public void removePancakes(String description, int count) {
+    public synchronized void removePancakes(String description, int count) {
         OrderStatus next = OrderWorkflow.next(status, OrderOperation.REMOVE_PANCAKES);
         List<Pancake> matching = pancakes.stream().filter(p -> p.description().equals(description)).toList();
         if (matching.size() < count) {
@@ -98,7 +102,7 @@ public class Order {
     /**
      * Completes the order; it must have at least one pancake and every pancake needs an ingredient.
      */
-    public void complete() {
+    public synchronized void complete() {
         OrderStatus next = OrderWorkflow.next(status, OrderOperation.COMPLETE);
         if (pancakes.isEmpty()) {
             throw new IllegalStateException("Cannot complete an empty order " + id);
@@ -109,15 +113,15 @@ public class Order {
         status = next;
     }
 
-    public void prepare() {
+    public synchronized void prepare() {
         status = OrderWorkflow.next(status, OrderOperation.PREPARE);
     }
 
-    public void cancel() {
+    public synchronized void cancel() {
         status = OrderWorkflow.next(status, OrderOperation.CANCEL);
     }
 
-    public void deliver() {
+    public synchronized void deliver() {
         status = OrderWorkflow.next(status, OrderOperation.DELIVER);
     }
 
