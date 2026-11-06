@@ -29,19 +29,26 @@ loop for each pancake
     PS -> O : addIngredient(pancakeId, ingredient)\n(checks OrderWorkflow)
   end
 end
-Disciple -> D : completeOrder(orderId)
-D -> OS : completeOrder(orderId)
-OS -> O : complete()\n(checks OrderWorkflow and preconditions)
-Chef -> C : listCompletedOrders()
-C -> OS : listCompletedOrders()
-Chef -> C : prepareOrder(orderId)
-C -> OS : prepareOrder(orderId)
-OS -> O : prepare() (checks OrderWorkflow)
-Delivery -> V : listPreparedOrders()
-V -> OS : listPreparedOrders()
-Delivery -> V : deliverOrder(orderId)
-V -> OS : deliverOrder(orderId)
-OS -> O : deliver() (checks OrderWorkflow)
-OS --> Delivery : DeliveredOrder(orderId, building, room, pancakes)
-note right of OS : order removed from repository
+alt Disciple completes the order
+  Disciple -> D : completeOrder(orderId)
+  D -> OS : completeOrder(orderId)
+  OS -> O : complete()\n(checks OrderWorkflow and preconditions)
+  Chef -> C : listCompletedOrders()
+  C -> OS : listCompletedOrders()
+  Chef -> C : prepareOrder(orderId)
+  C -> OS : prepareOrder(orderId)
+  OS -> O : prepare() (checks OrderWorkflow)
+  Delivery -> V : listPreparedOrders()
+  V -> OS : listPreparedOrders()
+  Delivery -> V : deliverOrder(orderId)
+  V -> OS : deliverOrder(orderId)
+  OS -> O : deliver() (checks OrderWorkflow)
+  OS --> Delivery : DeliveredOrder(orderId, building, room, pancakes)
+  note right of OS : order removed from repository
+else Disciple cancels the order
+  Disciple -> D : cancelOrder(orderId)
+  D -> OS : cancelOrder(orderId)
+  OS -> O : cancel() (checks OrderWorkflow)
+  note right of OS : order removed from repository
+end
 @enduml
