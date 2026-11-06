@@ -9,9 +9,11 @@ participant DeliveryApi as V
 participant OrderService as OS
 participant PancakeService as PS
 participant "Order\n(domain model)" as O
+note over O : synchronized: one thread at a time per order
 
 Disciple -> D : createOrder(building, room)
 D -> OS : createOrder(building, room)
+OS -> OS : validate building and room (BuildingRegistry)
 OS --> Disciple : orderId
 Disciple -> D : listIngredients()
 D -> PS : listIngredients()
@@ -40,6 +42,6 @@ V -> OS : listPreparedOrders()
 Delivery -> V : deliverOrder(orderId)
 V -> OS : deliverOrder(orderId)
 OS -> O : deliver() (checks OrderWorkflow)
-OS --> Delivery : DeliveredOrder(building, room, pancakes)
+OS --> Delivery : DeliveredOrder(orderId, building, room, pancakes)
 note right of OS : order removed from repository
 @enduml

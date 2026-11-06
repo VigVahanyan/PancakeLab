@@ -57,7 +57,8 @@ package "org.pancakelab.service.order (internal)" {
 
 package "org.pancakelab.service.pancake (internal)" {
   interface PancakeService {
-    addPancake / addIngredientToPancake / removePancakes
+    addPancake / listIngredients
+    addIngredientToPancake / removePancakes
   }
   class PancakeServiceImpl
 }
@@ -67,7 +68,9 @@ package "org.pancakelab.service.shared (internal)" {
     find(orderId): Order
     guarded(action)
   }
-  class OrderLog
+  class OrderLog {
+    log(operation, order)
+  }
 }
 
 package "org.pancakelab.repository" {
@@ -174,6 +177,8 @@ OrderRepository <|.. InMemoryOrderRepository
 InMemoryOrderRepository o-- "*" Order
 Order *-- "*" Pancake
 Order --> OrderStatus
+Order ..> Ingredient : addIngredient
+note right of Order : every method is synchronized\n(one lock per order)
 Order ..> OrderWorkflow : every change
 OrderWorkflow ..> OrderStatus
 OrderWorkflow ..> OrderOperation
